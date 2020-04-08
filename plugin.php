@@ -1,16 +1,16 @@
 <?php
 /*
-Plugin Name: Sign in with OAuth
+Plugin Name: Sign in with GitHub OAuth
 Plugin URI: https://github.com/LouisSung/yourls-oauth_sign_in
-Description: Enable OAuth sign in support (using GitLab as an example)
-Version: 1.0
+Description: Enable GitHub OAuth sign in support
+Version: 1.1 (GitHub)
 Author: LouisSung
 Author URI: https://github.com/LouisSung
 */
 
 // No direct call
 if(!defined('YOURLS_ABSPATH')) {die();}
-// prerequisite: 'composer require omines/oauth2-gitlab'
+// prerequisite: 'composer require league/oauth2-github'
 require_once YOURLS_ABSPATH.'/includes/vendor/autoload.php';
 
 session_start();
@@ -27,14 +27,14 @@ function add_oauth2_support() {
     $config_provider = include_once 'config_provider.php';
     $WARNING_PRINT_PASSWORD_IN_BROWSER = false;
 
-    // ref: https://github.com/thephpleague/oauth2-client/blob/2.4.1/docs/providers/thirdparty.md (use your own provider as needed)
-    // ref: https://github.com/omines/oauth2-gitlab/tree/3.1.2
-    $provider = new Omines\OAuth2\Client\Provider\Gitlab($config_provider);
+    // ref: https://github.com/thephpleague/oauth2-github
+    $provider = new League\OAuth2\Client\Provider\Github($config_provider);
 
     if(!isset($_GET['code'])) {
-        $optional = ['scope' => ['read_user']];    // set up GitLab API scope, or use 'openid profile email' instead
+        $optional = ['scope' => ['read_user']];    // set up GitHub API scope
         $authUrl = $provider->getAuthorizationUrl($optional);
         $_SESSION['oauth2state'] = $provider->getState();
+        header('Location: '.$authUrl);
     }
     elseif(empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
         unset($_SESSION['oauth2state']);
@@ -45,7 +45,7 @@ function add_oauth2_support() {
         try {
             $user = $provider->getResourceOwner($token);
             // pass domain verification, get user account and calculate user password
-            $account = $user->getUsername();    // `id, usename, or email` are recommended to be used as an account
+            $account = $user->getNickname();    // `id, usename, or email` are recommended to be used as an account
             // design your own grabled password generating function
             // parameter for grabled password generating function (PICK YOUR OWN ONE AS NEEDED) (at least 16 digits is required)
             // here I use prime numbers from ref: https://primes.utm.edu/curios/index.php?start=16&stop=16
@@ -95,7 +95,7 @@ OAUTH_PASSED_AND_TRY_TO_SIGN_IN;
         $('#username, #password').closest('p').hide();
         var btn_submit = $('#submit');
         btn_submit.closest('p').css('text-align', 'center');
-        btn_submit.attr({'type': 'button', 'style': 'font-size: 14px', 'value': 'Log in with GitLab'});
+        btn_submit.attr({'type': 'button', 'style': 'font-size: 14px', 'value': 'Log in with GitHub'});
         btn_submit.click(function(){window.open('$auth_url', '_self');});
     }());
 </script>
